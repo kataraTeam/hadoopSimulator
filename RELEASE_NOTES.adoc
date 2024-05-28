@@ -1,0 +1,73 @@
+# Releases Notes
+
+## v2.0
+
+### New Features:
+
+- Revamp of script to be good looking and easy to read 
+- Add Gif on README 
+- Update to latest versions
+- Support for EFM
+- Support for PvC 1.5.3
+- Datagen version 0.4.14
+
+### WIP:
+
+- Issue on stuck ansible connection when importing the cluster template => Need to relaunch the playbooks and stop stuck connection
+- Issue on Postgres 14 with RHEL 8 that needs to enable the service once failed and relaunch installation
+- Parameters for more network and disks settings on Cloud
+- PvC on AWS (Requires some PTR Records)
+
+## v1.2
+
+### New Features:
+
+- Observability cluster in 3.4.4
+- Support for PvC 1.5.2-h3
+- Datagen version 0.4.13
+
+### WIP:
+
+- Issue on stuck ansible connection when importing the cluster template => Need to relaunch the playbooks and stop stuck connection
+- Parameters for more network and disks settings on Cloud
+- PvC on AWS (Requires some PTR Records)
+
+## v1.1
+
+### New Features:
+
+- Public Cloud Provisioning on AWS 
+- Support for CDP 7.1.9.2 & 7.1.9.3
+- Support for PvC 1.5.2-h1
+- Datagen version 0.4.12
+
+### Deprecations:
+
+- CDP WXM is still working but branch has been frozen and will no longer be tested
+- HDP 2 & 3 are still working but branch has been frozen and will no longer be tested
+- CDH 5 & 6 are still working but branch has been frozen and will no longer be tested
+
+### WIP:
+
+- Issue on stuck ansible connection when importing the cluster template => Need to relaunch the playbooks and stop stuck connection
+- Parameters for more network and disks settings on Cloud
+- PvC on AWS (Requires some PTR Records)
+
+
+## v1.0
+
+### New Features:
+
+- Support for CDP 7.1.9
+- Support for PvC 1.5.2-h1
+- Frozen branch and versions for CDP 7.1.7 / CDH 5 & 6 
+- Refactor PvC Playbooks 
+
+### Deprecations:
+
+- CDP 7.1.7 (use cdp-717 cluster type or use tag CDP-717 of this repository)
+
+
+### WIP:
+
+- Public Cloud provisioning on AWS
