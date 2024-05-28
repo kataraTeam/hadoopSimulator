@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<service name="ssb-sse-ws" role="SSB-SSE-WS" version="1.11.0">
+   <metadata>
+      <context>/ssb-sse-ws</context>
+      <description>SSB-SSE-WS</description>
+      <shortDesc>SSB-SSE-WS</shortDesc>
+      <type>API</type>
+   </metadata>
+   <dispatch classname="org.apache.knox.gateway.dispatch.ConfigurableDispatch" use-two-way-ssl="false">
+      <param>
+         <name>responseExcludeHeaders</name>
+         <value>CONTENT-LENGTH,WWW-AUTHENTICATE</value>
+      </param>
+      <param>
+         <name>requestExcludeHeaders</name>
+         <value>Cookie,Origin</value>
+      </param>
+   </dispatch>
+   <routes>
+      <route path="/ssb-sse-ws/**">
+         <rewrite apply="SSB-SSE-WS/rule/inbound1" to="request.url"/>
+      </route>
+   </routes>
+</service>

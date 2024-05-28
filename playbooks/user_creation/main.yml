@@ -1,0 +1,100 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+- name: Create Unix users on all machines
+  hosts: cluster
+  gather_facts: false
+  strategy: free
+  tasks: 
+    - name: create Unix User
+      include_role:
+        name: unix_users
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+      when: not free_ipa
+
+- name: Create Free IPA users 
+  hosts: main
+  gather_facts: false
+  tasks: 
+    - name: create FreeIPA User
+      include_role:
+        name: free_ipa_users
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+      when: free_ipa
+
+- name: Create User's directories on all machines
+  hosts: cluster
+  gather_facts: false
+  strategy: free
+  tasks: 
+    - name: create User's directory
+      include_role:
+        name: users_directories
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+
+- name: Create keytab for user & fetch them to local machine
+  hosts: main
+  gather_facts: false
+  tasks: 
+    - name: create User's keytab
+      include_role:
+        name: users_keytabs
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+
+- name: Push created keytabs to all machines
+  hosts: cluster
+  gather_facts: false
+  strategy: free
+  tasks: 
+    - name: Push keytab to all machines
+      include_role:
+        name: push_users_keytab
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+
+- name: Create users environment
+  hosts: edge
+  gather_facts: false
+  tasks: 
+    - name: create User's env
+      include_role:
+        name: hdfs_paths
+      with_items: "{{ users }}"
+      vars:
+        user: "{{ item }}"
+
+- name: Create users' Ranger Policies
+  hosts: edge
+  gather_facts: false
+  tasks: 
+    - name: create User Ranger Policy
+      include_role:
+        name: ranger_policies
+      with_items: "{{ users }}"
+      loop_control:
+        loop_var: user

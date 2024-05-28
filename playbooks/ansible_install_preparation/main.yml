@@ -1,0 +1,42 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+- name: Install required packages for ansible installation
+  hosts: main
+  gather_facts: false
+  become: true
+  roles: 
+    - ansible_install
+    - { role: hdp_libs, when: distribution == "HDP" }
+
+- name: Install required package repository for Postgres DB
+  hosts: all
+  gather_facts: false
+  become: true
+  roles: 
+    - { role: centos_extra_packages, when: os == 'centos' and database_type == 'postgresql' }
+
+- name: Copy files for installation
+  hosts: main
+  gather_facts: false
+  roles: 
+    - set_install_repo
+    - { role: cdp_ansible_files, when: distribution != "HDP" }
+    - { role: hdp_ansible_files, when: distribution == "HDP" }
+

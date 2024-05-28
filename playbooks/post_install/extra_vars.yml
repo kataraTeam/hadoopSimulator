@@ -1,0 +1,43 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+cloudera_manager_host: ${NODE_0} 
+cloudera_manager_user: admin 
+cloudera_manager_password: admin 
+cluster_name: ${CLUSTER_NAME} 
+auto_tls: ${TLS} 
+encryption_activated: ${ENCRYPTION_ACTIVATED}
+cluster_type: ${CLUSTER_TYPE} 
+free_ipa: ${FREE_IPA} 
+ipaadmin_password: ${DEFAULT_PASSWORD} 
+realm: ${REALM} 
+ranger_user: admin 
+ranger_password: ${DEFAULT_PASSWORD} 
+default_password: ${DEFAULT_PASSWORD}
+debug: ${DEBUG}
+use_observability: ${USE_OBSERVABILITY}
+altus_key_id: ${ALTUS_KEY_ID}
+altus_private_key: ${ALTUS_PRIVATE_KEY}
+cloudera_manager_base_url: ${CM_BASE_URL}
+cloudera_manager_base_user: ${CM_BASE_USER}
+cloudera_manager_base_password: ${CM_BASE_PASSWORD}
+tp_host: ${TP_HOST}
+distribution: ${DISTRIBUTION_TO_DEPLOY}
+default_admin_user: ${DEFAULT_ADMIN_USER}
+

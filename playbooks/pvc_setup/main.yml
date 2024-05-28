@@ -1,0 +1,372 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+# - name: Prereqs for FreeIPA
+#   hosts: ipa
+#   become: yes
+#   gather_facts: no
+#   roles:
+#     - prerequisites/prereqs_ipa
+
+- name: Pre-requisites on base DB
+  hosts: "{{ database_host }}"
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs_db
+      when: not skip_pvc_prereqs
+  
+- name: Pre-requisites on Open Shift
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs_oc
+      when: not skip_pvc_prereqs and pvc_type == "OC"
+
+- name: Pre-requisites on ECS Nodes
+  hosts: pvc
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs_ecs_nodes
+      when: not skip_pvc_prereqs and pvc_type == "ECS"
+
+- name: Pre-requisites on ECS Server Node
+  hosts: "{{ pvc_ecs_server_host }}"
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs_ecs_server
+      when: not skip_pvc_prereqs and pvc_type == "ECS"
+
+- name: Pre-requisites on ECS
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs_ecs
+      when: not skip_pvc_prereqs and pvc_type == "ECS"
+
+- name: Patches for ECS agent
+  hosts: pvc
+  gather_facts: false
+  roles: 
+    - role: prerequisites/patch_ecs_agent
+      when: not skip_pvc_prereqs and pvc_type == "ECS" and cm_version is version('7.7.1', '<')
+
+- name: Pre-requisites and fixes for PvC 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: prerequisites/prereqs
+      when: not skip_pvc_prereqs
+
+# PVC Setup
+- name: Setup PvC 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: common/cm_config
+      when: not skip_pvc_prereqs
+    - role: config/setup_ldap_provider 
+      when: not skip_pvc_prereqs
+    - role: config/check_dedicated_nodes_required
+      when: not skip_pvc_prereqs and pvc_type == "ECS"
+
+#  Setup Dedicated nodes for CDW or CML
+- name: Setup dedicated nodes for SSD (CDW)
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: setup dedicated nodes
+      include_role:
+        name: config/setup_dedicated_nodes
+      with_items: "{{ ecs_ssd_nodes_list }}"
+      vars: 
+        dedicated_node_hostname: "{{ item }}"
+        dedicated_node_type: ssd
+      when: setup_ecs_ssd | default(false)
+      ignore_errors: yes
+
+- name: Setup dedicated nodes for GPU (CML/CDE)
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: setup dedicated nodes
+      include_role:
+        name: config/setup_dedicated_nodes
+      with_items: "{{ ecs_gpu_nodes_list }}"
+      vars: 
+        dedicated_node_hostname: "{{ item }}"
+        dedicated_node_type: gpu
+      when: setup_ecs_gpu | default(false)
+      ignore_errors: yes
+
+- name: Restart ECS
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: config/restart_ecs
+      when: (setup_ecs_ssd | default(false)) or (setup_ecs_gpu | default(false))
+
+# Tooling
+- name: Setup CDP CLI
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: tools/setup_cdpcli
+      when: not skip_pvc_prereqs
+
+- name: Setup AWS CLI for Ozone
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: true
+  roles: 
+    - role: tools/setup_aws_cli
+      when: setup_pvc_tools and not skip_pvc_prereqs
+
+- name: Install k9s 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: tools/setup_k9s
+      when: setup_pvc_tools and not skip_pvc_prereqs
+
+
+## Yunikorn Queues ###
+- name: Set Root Queue Size 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: config/setup_yunikorn_root
+      when: setup_yunikorn_queues
+
+- name: Create Yunikorn Queues
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: create queues in yunikorn
+      include_role:
+        name: config/create_yunikorn_queues
+      with_items: "{{ yunikorn_child_queues }}"
+      vars: 
+        queue: "{{ item }}"
+      ignore_errors: yes
+      when: setup_yunikorn_queues
+
+- name: Install Yunikorn Ingess
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: true
+  roles: 
+    - role: cde/yunikorn_ingress
+      when: setup_pvc_tools | default(false)
+
+## ENV ###
+- name: Create environments
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: create envs
+      include_role:
+        name: common/create_env
+      with_items: "{{ environments }}"
+      vars: 
+        env: "{{ item }}"
+      ignore_errors: yes
+
+
+## User's Control Plane and Env Rights ###
+- name: Setting up users' Control Plane rights
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: setup rights
+      include_role:
+        name: config/setup_cp_rights
+      with_items: "{{ user_rights }}"
+      vars: 
+        user: "{{ item }}"
+      ignore_errors: yes
+
+### CDW ####
+- name: Create Cloudera Data Warehouse
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: true
+  tasks: 
+    - name: create CDWs
+      include_role:
+        name: cdw/create_cdw
+      with_items: "{{ warehouses }}"
+      vars: 
+        warehouse: "{{ item }}"
+      when: cdw | default(false)
+      ignore_errors: yes
+
+- name: Create Cloudera Data Vizs
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: create Data Vizs
+      include_role:
+        name: cdw/create_dataviz
+      with_items: "{{ vizs }}"
+      vars: 
+        viz: "{{ item }}"
+      when: dataviz | default(false)
+      ignore_errors: yes
+
+
+#### CDE ####
+- name: Create Cloudera Data Engineering
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: create CDEs
+      include_role:
+        name: cde/create_cde
+      with_items: "{{ virtual_clusters }}"
+      vars:
+        virtual_cluster: "{{ item }}"
+      when: cde | default(false)
+      ignore_errors: yes
+
+- name: Sign CDE Certs
+  hosts: localhost
+  gather_facts: false
+  tasks: 
+    - name: sign certificates
+      include_role:
+        name: cde/sign_cde_certs
+      with_items: "{{ virtual_clusters }}"
+      vars:
+        virtual_cluster: "{{ item }}"
+      when: cde | default(false)
+      ignore_errors: yes
+
+- name: Upload CDE certs
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: upload certificates
+      include_role:
+        name: cde/upload_cde_certs
+      with_items: "{{ virtual_clusters }}"
+      vars:
+        virtual_cluster: "{{ item }}"
+      when: cde | default(false)
+      ignore_errors: yes
+
+- name: Install CDE CLI 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: cde/setup_cde_cli
+      when: setup_pvc_tools and cde | default(false)
+
+
+### CML ####
+- name: Enable Quota Management for CML
+  hosts: "{{ pvc_ecs_server_host }}"
+  gather_facts: true
+  roles: 
+    - role: cml/enable_quota_management
+      when: pvc_type == 'ECS' and pvc_version is version('1.5.2', '>=') and cml | default(false)
+
+- name: Create Cloudera Machine Learning Registries
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: true
+  tasks: 
+    - name: create CML Registries
+      include_role:
+        name: cml/create_cml_registry
+      with_items: "{{ ml_registries }}"
+      vars: 
+        ml_registry: "{{ item }}"
+      when: cmlr | default(false)
+      ignore_errors: yes
+
+
+- name: Create Cloudera Machine Learning
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: create CMLs
+      include_role:
+        name: cml/create_cml
+      with_items: "{{ workspaces }}"
+      vars: 
+        workspace: "{{ item }}"
+      when: cml | default(false)
+      ignore_errors: yes
+
+- name: Sign CML certificates
+  hosts: localhost
+  gather_facts: false
+  tasks: 
+    - name: sign certificates
+      include_role:
+        name: cml/sign_cml_certs
+      with_items: "{{ workspaces }}"
+      vars: 
+        workspace: "{{ item }}"
+      when: cml | default(false)
+      ignore_errors: yes
+
+- name: Upload CML certificates
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: upload certificates
+      include_role:
+        name: cml/upload_cml_certs
+      with_items: "{{ workspaces }}"
+      vars: 
+        workspace: "{{ item }}"
+      when: cml | default(false)
+      ignore_errors: yes
+
+- name: Install cdswctl 
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  roles: 
+    - role: cml/setup_cdswctl
+      when: setup_pvc_tools and cml | default(false)
+
+### User's DS Rights ###
+- name: Setting up users' rights for Data Services
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: setup rights
+      include_role:
+        name: config/setup_ds_rights
+      with_items: "{{ user_rights }}"
+      vars: 
+        user: "{{ item }}"
+      ignore_errors: yes
+
+
+# ### Classic Clusters ###
+- name: Set up classic clusters connections
+  hosts: "{{ cloudera_manager_host }}"
+  gather_facts: false
+  tasks: 
+    - name: setup classic clusters
+      include_role:
+        name: config/setup_classic_cluster
+      with_items: "{{ classic_clusters }}"
+      vars: 
+        classic_cluster: "{{ item }}"
+      ignore_errors: yes
+      when: setup_classic_clusters

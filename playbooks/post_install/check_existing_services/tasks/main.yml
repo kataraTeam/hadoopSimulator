@@ -1,0 +1,240 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+- set_fact:
+    cloudera_manager_protocol: http
+    cloudera_manager_port: 7180
+  when: not auto_tls
+
+- set_fact:
+    cloudera_manager_protocol: https
+    cloudera_manager_port: 7183
+  when: auto_tls
+
+- set_fact:
+    cloudera_manager_url: "{{ cloudera_manager_protocol }}://{{ cloudera_manager_host }}:{{ cloudera_manager_port }}"
+
+- name: Get CM API Version
+  uri:
+    url: "{{ cloudera_manager_url }}/api/version"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: cloudera_manager_api_version_response
+
+- set_fact:
+    cloudera_manager_api_version: "{{ cloudera_manager_api_version_response.content }}"
+
+- set_fact:
+    cloudera_manager_api_url: "{{ cloudera_manager_url }}/api/{{ cloudera_manager_api_version }}"
+
+- name: DEBUG - cloudera_manager_api_url
+  debug:
+    msg: "{{ cloudera_manager_api_url }}"
+  when: debug | default(false)
+    
+- name: Get All services from CM
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: cloudera_manager_all_services
+
+- set_fact:
+    solr_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'SOLR' && name != 'infra_solr'].name | [0]"
+
+- name: DEBUG - solr_service_name
+  debug:
+    msg: "{{ solr_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    solr_service_exists: "{{ true if solr_service_name != '' else false }}"
+
+- name: DEBUG - solr_service_exists
+  debug:
+    msg: "{{ solr_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    hue_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'HUE'].name | [0]"
+
+- name: DEBUG - hue_service_name
+  debug:
+    msg: "{{ hue_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    hue_service_exists: "{{ true if hue_service_name != '' else false }}"
+
+- name: DEBUG - hue_service_exists
+  debug:
+    msg: "{{ hue_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    knox_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'KNOX'].name | [0]"
+
+- name: DEBUG - knox_service_name
+  debug:
+    msg: "{{ knox_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    knox_service_exists: "{{ true if knox_service_name != '' else false }}"
+
+- name: DEBUG - knox_service_exists
+  debug:
+    msg: "{{ knox_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    ranger_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'RANGER'].name | [0]"
+
+- name: DEBUG - ranger_service_name
+  debug:
+    msg: "{{ ranger_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    ranger_service_exists: "{{ true if ranger_service_name != '' else false }}"
+
+- name: DEBUG - ranger_service_exists
+  debug:
+    msg: "{{ ranger_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    oozie_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'OOZIE'].name | [0]"
+
+- name: DEBUG - oozie_service_name
+  debug:
+    msg: "{{ oozie_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    oozie_service_exists: "{{ true if oozie_service_name != '' else false }}"
+
+- name: DEBUG - oozie_service_exists
+  debug:
+    msg: "{{ oozie_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    ssb_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'SQL_STREAM_BUILDER'].name | [0]"
+
+- name: DEBUG - ssb_service_name
+  debug:
+    msg: "{{ ssb_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    ssb_service_exists: "{{ true if ssb_service_name != '' else false }}"
+
+- name: DEBUG - ssb_service_exists
+  debug:
+    msg: "{{ ssb_service_exists }}"
+  when: debug | default(false)
+
+
+- set_fact:
+    livy3_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'LIVY_FOR_SPARK3'].name | [0]"
+
+- name: DEBUG - livy3_service_name
+  debug:
+    msg: "{{ livy3_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    livy3_service_exists: "{{ true if livy3_service_name != '' else false }}"
+
+- name: DEBUG - livy3_service_exists
+  debug:
+    msg: "{{ livy3_service_exists }}"
+  when: debug | default(false)
+
+
+
+- set_fact:
+    sr_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'SCHEMAREGISTRY'].name | [0]"
+
+- name: DEBUG - sr_service_name
+  debug:
+    msg: "{{ sr_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    sr_service_exists: "{{ true if sr_service_name != '' else false }}"
+
+- name: DEBUG - sr_service_exists
+  debug:
+    msg: "{{ sr_service_exists }}"
+  when: debug | default(false)
+
+
+
+- set_fact:
+    efm_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'EFM'].name | [0]"
+
+- name: DEBUG - efm_service_name
+  debug:
+    msg: "{{ efm_service_name }}"
+  when: debug | default(false)
+
+- set_fact: 
+    efm_service_exists: "{{ true if efm_service_name != '' else false }}"
+
+- name: DEBUG - efm_service_exists
+  debug:
+    msg: "{{ efm_service_exists }}"
+  when: debug | default(false)

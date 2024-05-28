@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rules>
+    <rule dir="IN" name="SSB-MVE-API-LB/ssb-mve-api-lb/path" pattern="*://*:*/**/ssb-mve-api-lb/{path=**}?{**}">
+        <rewrite template="{$serviceUrl[SSB-MVE-API-LB]}/{path=**}?{**}"/>
+    </rule>
+</rules>

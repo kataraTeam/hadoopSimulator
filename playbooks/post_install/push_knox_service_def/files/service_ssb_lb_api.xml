@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<service name="ssb-mve-api-lb" role="SSB-MVE-API-LB" version="1.11.0">
+    <metadata>
+        <context>/ssb-mve-api-lb</context>
+        <description>Streaming SQL Builder - Materialized View Engine API LB</description>
+        <shortDesc>SSB - MVE API LB</shortDesc>
+        <type>API</type>
+    </metadata>
+    <routes>
+        <route path="/ssb-mve-api-lb/**">
+            <rewrite apply="SSB-MVE-API-LB/ssb-mve-api-lb/path" to="request.url"/>
+        </route>
+    </routes>
+</service>

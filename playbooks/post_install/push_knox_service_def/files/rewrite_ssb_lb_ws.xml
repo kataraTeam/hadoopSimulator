@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rules>
+    <rule dir="IN" name="SSB-SSE-WS-LB/rule/inbound1" pattern="*://*:*/**/ssb-sse-ws-lb/{path=**}">
+        <rewrite template="{$serviceUrl[SSB-SSE-WS-LB]}/{path=**}/"/>
+    </rule>
+</rules>

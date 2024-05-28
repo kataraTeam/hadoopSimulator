@@ -1,0 +1,125 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+- name: Get All services from CM
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: cloudera_manager_all_services
+
+- set_fact:
+    kms_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'RANGER_KMS_KTS'].name | [0]"
+  when: distribution == 'CDP'
+
+- set_fact:
+    kms_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'KEYTRUSTEE'].name | [0]"
+  when: distribution == 'CDH'
+
+- name: DEBUG - kms_service_name
+  debug:
+    msg: "{{ kms_service_name }}"
+  when: debug | default(false)
+
+- name: Push TLS settings for Ranger KMS
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/{{ kms_service_name }}/roleConfigGroups/{{ kms_service_name }}-RANGER_KMS_SERVER_KTS-BASE/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+    body: "{{ lookup('file', 'kms_tls.json', errors='ignore' ) }}"
+  ignore_errors: yes
+  when: distribution == 'CDP'
+
+- name: Push TLS settings for Keytrustee
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/{{ kms_service_name }}/roleConfigGroups/{{ kms_service_name }}-KMS_KEYTRUSTEE-BASE/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+    body: "{{ lookup('file', 'kms_tls_cdh.json', errors='ignore' ) }}"
+  ignore_errors: yes
+  when: distribution == 'CDH'
+
+- name: Push TLS settings for Keytrustee
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/{{ kms_service_name }}/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+    body: "{{ lookup('file', 'kms_tls_cdh_kms.json', errors='ignore' ) }}"
+  ignore_errors: yes
+  when: distribution == 'CDH'
+
+
+# Restart ALL clusters & make sure they all restarted well to avoid later restart not working
+- name: List all Cluster 
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters?clusterType=any"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: all_clusters_response
+
+- set_fact:
+    all_clusters: "{{ all_clusters_response.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[].name"
+
+- name: DEBUG - all_clusters
+  debug:
+    msg: "{{ all_clusters }}"
+  when: debug | default(false)
+
+- name: Restart Cluster one by one
+  include_role:
+    name: restart_cluster
+  with_items: "{{ all_clusters }}"
+  vars: 
+    cluster_to_restart: "{{ item }}"

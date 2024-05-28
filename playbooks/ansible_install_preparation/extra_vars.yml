@@ -1,0 +1,32 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+distribution: ${DISTRIBUTION_TO_DEPLOY}
+install_repo_url: ${INSTALL_REPO_URL} 
+pvc_type: ${PVC_TYPE} 
+pvc: ${PVC}
+debug: ${DEBUG}
+deploy_folder: ${TO_DEPLOY_FOLDER}
+ansible_repo: "${ANSIBLE_REPO_DIR}"
+encryption_activated: ${ENCRYPTION_ACTIVATED}
+cdh6_kts_path: ${CDH6_KTS_PATH}
+cdh6_kts_kms_path: ${CDH6_KTS_KMS_PATH}
+os: ${OS}
+os_version: "${OS_VERSION}"
+database_type: ${DATABASE_TYPE}

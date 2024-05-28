@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<service name="ssb-sse-ui-lb" role="SSB-SSE-UI-LB" version="1.11.0">
+    <dispatch classname="org.apache.knox.gateway.dispatch.ConfigurableDispatch" use-two-way-ssl="false">
+        <param>
+            <name>responseExcludeHeaders</name>
+            <value>CONTENT-LENGTH,WWW-AUTHENTICATE</value>
+        </param>
+    </dispatch>
+    <metadata>
+        <context>/ssb-sse-ui-lb</context>
+        <description>SSB-SSE-UI-LB</description>
+        <shortDesc>SSB-SSE-UI-LB</shortDesc>
+        <type>UI</type>
+    </metadata>
+    <routes>
+        <route path="/ssb-sse-ui-lb/"/>
+        <route path="/ssb-sse-ui-lb/**"/>
+        <route path="/ssb-sse-ui-lb/**?**"/>
+        <route path="/ssb-sse-ui-lb/swagger/**">
+            <rewrite apply="SSB-SSE-UI-LB/filter/outbound/swagger/body" to="response.body"/>
+        </route>
+    </routes>
+</service>

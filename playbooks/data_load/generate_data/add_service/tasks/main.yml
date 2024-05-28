@@ -1,0 +1,232 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+---
+- name: Get All Hosts
+  uri:
+    url: "{{ cloudera_manager_api_url }}/hosts"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+  register: all_hosts
+
+- name: Set hostId
+  set_fact:
+    edge_host_id: "{{ all_hosts.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?hostname == '{{ edge_host }}' ].hostId | [0]"
+
+- name: DEBUG - edge_host_id
+  debug:
+    msg: "{{ edge_host_id }}"
+  when: debug | default(false)
+
+
+- name: Get All services from CM
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: cloudera_manager_all_services
+
+- set_fact:
+    ranger_service_name: "{{ cloudera_manager_all_services.json | community.general.json_query(query) }}"
+  vars:
+    query: "items[?type == 'RANGER'].name | [0]"
+
+- name: DEBUG - ranger_service_name
+  debug:
+    msg: "{{ ranger_service_name }}"
+  when: debug | default(false)
+
+
+- name: Add Datagen service to CM
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    body_format: json
+    body:  "{{ lookup('template', 'datagen_service.json' ) }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Check DATAGEN exists
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    method: GET
+  register: dg_status
+  until: dg_status.json.serviceState == "STOPPED"
+  retries: 100
+  delay: 1
+
+- name: Set Ranger dependency
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    body_format: json
+    body:  "{{ lookup('template', 'ranger-dependency.json' ) }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Set Thresholds for heahlth tests
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/roleConfigGroups/datagen-DATAGEN_SERVER-BASE/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    body_format: json
+    body:  "{{ lookup('template', 'thresholds.json' ) }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Set TLS properties if needed
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/roleConfigGroups/datagen-DATAGEN_SERVER-BASE/config"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: PUT
+    body_format: json
+    body:  "{{ lookup('file', 'datagen_service_tls_configs.json' ) }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+  when: tls_activated
+
+- name: Wait to acknowledge new configs
+  pause:
+    seconds: 5
+
+- name: Initialize hdfs dir for Datagen service
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/commands/CreateUserHdfsHomeDirCommand"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Check that no command is currently running on the service
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/commands"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: result
+  until: result.content|length == 19
+  retries: 60
+  delay: 30
+
+- name: Initialize Ranger Policies for Datagen service
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/commands/InitServiceCommand"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Check that no command is currently running on the service
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/commands"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+    body_format: json
+  register: result
+  until: result.content|length == 19
+  retries: 60
+  delay: 30
+
+- name: Set Datagen files Readable
+  file:
+    path: /opt/cloudera/parcels/DATAGEN/
+    recurse: yes
+    mode: '0755'
+
+- name: Start Datagen Service
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/datagen/commands/start"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+    validate_certs: no
+
+- name: Restart of CMS to acknowledge new service 
+  uri:
+    url: "{{ cloudera_manager_api_url }}/cm/service/commands/restart"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    force_basic_auth: yes
+    status_code: 200
+    validate_certs: no
+    body_format: json
+
+
+- name: Restart of Ranger  
+  uri:
+    url: "{{ cloudera_manager_api_url }}/clusters/{{ cluster_name }}/services/{{ ranger_service_name }}/commands/restart"
+    user: "{{ cloudera_manager_user }}"
+    password: "{{ cloudera_manager_password }}"
+    method: POST
+    force_basic_auth: yes
+    status_code: 200
+    validate_certs: no
+    body_format: json
