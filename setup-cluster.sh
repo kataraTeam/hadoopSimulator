@@ -128,7 +128,7 @@ export CM_BASE_PASSWORD="admin"
 export TP_HOST=
 
 # Installation
-export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/heads/main.zip"
+export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/heads/main.zip"
 export ANSIBLE_REPO_DIR="cldr-playbook-main"
 export CM_COLOR="RANDOM"
 export ROOT_CA_CERT=
@@ -856,7 +856,7 @@ then
         export ANSIBLE_EXTRA_VARS_YML_FILE="ansible-cdp-717/extra_vars.yml"
         export CM_VERSION="7.6.7"
         export CDH_VERSION="7.1.7.2026"
-        export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
+        export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
         export ANSIBLE_REPO_DIR="cldr-playbook-CDP-7.1.7"
     elif [ "${CLUSTER_TYPE}" = "cdh6" ]
     then
@@ -870,7 +870,7 @@ then
         export TLS="false"
         export DATA_LOAD="false"
         export DATABASE_VERSION="12"
-        export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
+        export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
         export ANSIBLE_REPO_DIR="cldr-playbook-CDP-7.1.7"
     elif [ "${CLUSTER_TYPE}" = "cdh6-enc-stream" ]
     then
@@ -885,7 +885,7 @@ then
         export ENCRYPTION_ACTIVATED="true"
         export DATA_LOAD="false"
         export DATABASE_VERSION="12"
-        export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
+        export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
         export ANSIBLE_REPO_DIR="cldr-playbook-CDP-7.1.7"
     elif [ "${CLUSTER_TYPE}" = "cdh5" ]
     then
@@ -901,7 +901,7 @@ then
         export POST_INSTALL="false"
         export USER_CREATION="false"
         export DATABASE_VERSION="12"
-        export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
+        export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/tags/CDP-7.1.7.zip"
         export ANSIBLE_REPO_DIR="cldr-playbook-CDP-7.1.7"
     elif [ "${CLUSTER_TYPE}" = "hdp2" ]
     then
@@ -958,7 +958,7 @@ fi
 
 if [ -z "${INSTALL_REPO_URL}" ]
 then
-    export INSTALL_REPO_URL="https://github.com/frischHWC/cldr-playbook/archive/refs/heads/main.zip"
+    export INSTALL_REPO_URL="https://github.com/kataraTeam/cldr-playbook/archive/refs/heads/main.zip"
 fi
 
 if [ -z "${CDH_REPO}" ]
