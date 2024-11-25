@@ -1535,6 +1535,7 @@ then
         launch_playbook verify_inventory_and_definition "Cluster Definition Verified" "Could not Verify Cluster Definition" 12 120 0 "true"
 
         logger info "###### #bold:Applying nodes pre-requisites#end_bold ######"
+        export ANSIBLE_PYTHON_3_PARAMS=""
         launch_playbook prepare_nodes "Pre-Requisites Applied" "Could not apply pre-requisites for nodes" 900 1200 2 true
 
         logger info "###### #bold:Installation of DB, (KDC, HA-Proxy, CA Server)#end_bold  ######"
