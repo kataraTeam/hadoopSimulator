@@ -26,6 +26,7 @@ export SETUP_ETC_HOSTS="true"
 # Steps to do
 export PRE_INSTALL="true"
 export PREPARE_ANSIBLE_DEPLOYMENT="true"
+export SETUP_DB_NO_GL="true"
 export INSTALL="true"
 export POST_INSTALL="true"
 export USER_CREATION="true"
@@ -54,13 +55,13 @@ export REALM="FRISCH.COM"
 export ENCRYPTION_ACTIVATED="false"
 
 # Versions
-export JDK_VERSION="11"
+export JDK_VERSION="17"
 export CM_VERSION="7.11.3.6"
 export CDH_VERSION="7.1.9.4"
-export CSA_VERSION="1.11.0.0"
-export CFM_VERSION="2.1.6.0"
+export CSA_VERSION="1.12.0.0"
+export CFM_VERSION="2.1.7.0"
 export CEM_VERSION="2.1.2.0"
-export SPARK3_VERSION="3.3.7180.14"
+export SPARK3_VERSION="3.3.7190.0"
 export OBSERVABILITY_VERSION="3.4.4"
 export PVC_VERSION="1.5.3"
 export AMBARI_VERSION="2.7.5.0"
@@ -85,8 +86,8 @@ export DATABASE_TYPE="postgresql"
 export DATABASE_VERSION="14"
 
 # OS Related
-export OS="centos"
-export OS_VERSION="7.9"
+export OS="rhel"
+export OS_VERSION="8.8"
 export INSTALL_PYTHON3="true"
 
 # PVC related
@@ -692,6 +693,7 @@ done
 
 # Load logger
 . ./logger.sh
+. ./functions.sh
 
 logger info ""
 logger info:cyan "#bold:############ Start of One Script Deploy ############"
@@ -1478,7 +1480,7 @@ export ANSIBLE_CONFIG=$(pwd)/ansible.cfg
 
 if [ "${USE_ANSIBLE_PYTHON_3}" == "true" ]
 then
-    export ANSIBLE_PYTHON_3_PARAMS='-e ansible_python_interpreter=/usr/bin/python3'
+    export ANSIBLE_PYTHON_3_PARAMS="-e ansible_python_interpreter=${ANSIBLE_PYTHON_3_PATH}"
 fi
 
 # Print Env variables
@@ -1499,7 +1501,7 @@ logger info ""
 if [ "${PRE_INSTALL}" = "true" ] 
 then
     logger info "############ #bold:Setup cluster hosts#end_bold ############"
-    launch_playbook pre_install "Hosts Ready" "Could not prepare Hosts" 280 420 2 false
+    launch_playbook pre_install "Hosts Ready" "Could not prepare Hosts" 360 600 2 false
 fi
 
 if [ "${PREPARE_ANSIBLE_DEPLOYMENT}" = "true" ]
