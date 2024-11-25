@@ -57,17 +57,7 @@ clusters:
           ranger_security_safety_valve: "<property><name>xasecure.hive.uri.permission.coarse.check</name><value>true</value></property>"
       HIVE_ON_TEZ:
         HIVESERVER2:
-          hive_server2_transport_mode: "all"
-      IMPALA:
-        CATALOGSERVER:
-          impala_catalog_service_host: "{{ impala_catalog_host }}"
-        STATESTORE:
-          impala_state_store_host: "{{ impala_state_store_host }}"
-        IMPALAD:
-          impala_server_host: "{{ impala_server_host }}"
-        SERVICEWIDE:
-          enable_shell_based_kinit: true
-          enable_shell_based_kinit_safety_valve: "<property><name>impala.shell_based_kinit</name><value>true</value></property>"    
+          hive_server2_transport_mode: "all"   
       YARN:
         SERVICEWIDE:
           yarn_admin_acl: "${yarn_user},{{ default_admin_user }}"
