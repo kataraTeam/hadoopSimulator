@@ -549,6 +549,12 @@ while [ "$1" != "" ]; do
         --use-ansible-python-3)
             USE_ANSIBLE_PYTHON_3=$VALUE
             ;;
+        --ansible-python-3-path)
+            ANSIBLE_PYTHON_3_PATH=$VALUE
+            ;;
+        --ansible-python-3-link)
+            SET_PYTHON_3_LINK=$VALUE
+            ;;            
         --pvc)
             PVC=$VALUE
             ;;
