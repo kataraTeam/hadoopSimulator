@@ -44,7 +44,7 @@
   ignore_errors: true
 
 - name: Install jmespath
-  shell: pip3 install jmespath
+  shell: /usr/local/bin/pip3 install jmespath
   ignore_errors: true
 
 # Old one
