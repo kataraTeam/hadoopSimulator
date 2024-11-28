@@ -55,7 +55,7 @@ export REALM="FRISCH.COM"
 export ENCRYPTION_ACTIVATED="false"
 
 # Versions
-export JDK_VERSION="17"
+export JDK_VERSION="11"
 export CM_VERSION="7.11.3.6"
 export CDH_VERSION="7.1.9.4"
 export CSA_VERSION="1.12.0.0"
