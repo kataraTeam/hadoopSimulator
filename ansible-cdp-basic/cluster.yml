@@ -20,7 +20,7 @@
 clusters:
   - name: "{{ cluster_name }}"
     # Remove undesired services below
-    services: [HBASE, HDFS, HIVE, HIVE_ON_TEZ, IMPALA, SPARK_ON_YARN, TEZ, YARN, ZOOKEEPER]
+    services: [HBASE, HDFS, HIVE, HIVE_ON_TEZ, HUE, IMPALA, SPARK_ON_YARN, TEZ, YARN, ZOOKEEPER]
     security:
       kerberos: "{{ kerberos_activated }}"
     repositories:
@@ -82,6 +82,7 @@ clusters:
         HDFS: [NAMENODE, DATANODE, JOURNALNODE, FAILOVERCONTROLLER, GATEWAY]
         HIVE: [HIVEMETASTORE, GATEWAY]
         HIVE_ON_TEZ: [HIVESERVER2, GATEWAY]
+        HUE: [HUE_SERVER]
         SPARK_ON_YARN: [GATEWAY, SPARK_YARN_HISTORY_SERVER]
         TEZ: [GATEWAY]
         IMPALA: [CATALOGSERVER,STATESTORE]
@@ -99,9 +100,10 @@ clusters:
         ZOOKEEPER: [SERVER] 
       Workers:
         HBASE: [REGIONSERVER, GATEWAY]
-        HDFS: [DATANODE, GATEWAY, JOURNALNODE]
+        HDFS: [DATANODE, GATEWAY, JOURNALNODE, BALANCER]
         HIVE: [GATEWAY]
         HIVE_ON_TEZ: [GATEWAY]
+        HUE: [HUE_LOAD_BALANCER]
         IMPALA: [IMPALAD]
         TEZ: [GATEWAY]
         SPARK_ON_YARN: [GATEWAY]
